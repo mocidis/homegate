@@ -1,0 +1,8 @@
+{
+  "name": "smarthome",
+  "version": "1.0.1",
+  "dependencies": {
+    "sqlite3" : "latest",
+    "express" : "latest"
+  }
+}
