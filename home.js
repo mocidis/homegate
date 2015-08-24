@@ -315,12 +315,12 @@ function getGroup(arg, haveSubGrp, haveSubDev, callback) {
                 fetchDevGr(tree, function(res) {
                     callback({
                         success: true,
-                        groups: res
+                        group: res
                     });
                 });
             } else callback({
                 success: true,
-                groups: tree
+                group: tree
             });
         }
     });
@@ -337,7 +337,7 @@ function addGroup(arg, callback) {
                     db.get("SELECT * from `group` WHERE lft = 1", function(err2, row2) {
                         callback({
                             success: true,
-                            groups: new Group(row2.id, row2.name, row2.descrip, row2.lft, row2.rgt)
+                            group: new Group(row2.id, row2.name, row2.descrip, row2.lft, row2.rgt)
                         });
                     });
                 });
@@ -358,7 +358,7 @@ function addGroup(arg, callback) {
                             db.get("SELECT * FROM `group` WHERE lft = " + row.rgt, function(err2, row2) {
                                 callback({
                             success: true,
-                            groups: new Group(row2.id, row2.name, row2.descrip, row2.lft, row2.rgt)
+                            group: new Group(row2.id, row2.name, row2.descrip, row2.lft, row2.rgt)
                         });
                             });
                         })
@@ -399,7 +399,7 @@ function removeGroup(arg, callback) {
                 })
                 callback({
                             success: true,
-                            groups: new Group(row.id, row.name, row.descrip, row.lft, row.rgt)
+                            group: new Group(row.id, row.name, row.descrip, row.lft, row.rgt)
                         });
             }
         });
@@ -427,7 +427,7 @@ function updateGroup(arg, callback) {
                 });
                 callback({
                             success: true,
-                            groups: new Group(arg.id, arg.name, arg.descrip, arg.lft, arg.rgt)
+                            group: new Group(arg.id, arg.name, arg.descrip, arg.lft, arg.rgt)
                         });
             }
         });
