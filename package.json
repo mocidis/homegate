@@ -1,5 +1,5 @@
 {
-  "name": "smarthome",
+  "name": "homegate",
   "version": "1.0.1",
   "main": "home.js",
   "dependencies": {
