@@ -1,39 +1,65 @@
-# homegate
+# HomeGate
 
-Day la node js project thuc thi chuc nang homegate trong ung dung Smarthome. 
+Đây là Nodejs Project thực thi chức năng chủa homegate trong ứng dụng SmartHome. 
 
-* Cac chuc nang homegate bao gom:
+## Các chức năng của HomeGate bao gồm:
 
-- Authentication dua tren access token 
-- Quan ly thiet bi:
-   + Cho phep add/remove cac device (thiet bi bi dieu khien) vao mot "cay quan ly". Nut la cua cay quan ly la device. Cac nut giua la cac nhom. Cay quan ly duoc thuc hien bang "nested set model" tren SQLite3.
-   + Query cac thiet bi theo: Ten (nhom, thiet bi), ID (nhom, thiet bi)
-   + API la HTTP/JSON
-- Thong chi tiet cua 1 thiet bi bao gom: Name, Description, type, endpoint
+- Authentication dựa trên Access Token
+- Quản lý thiết bị:
+   + Cho phép add/remove các Device (thiết bị bị điều khiển) vào một "Cây quản lý". Nút lá của Cây quản lý là Device. Các nút giữa, nút trong là Group (Nhóm các thiết bị). Cây quản lý được triển khai theo mô hình "Nested Set Model" trên SQLite3.
+   + Query các thiết bị theo: Tên (Nhóm, Thiết bị), ID (Nhóm, Thiết bị), prefix Tên.
+   + API là HTTP/JSON
+- Thông tin chi tiết của 1 Device (Thiết bị bị điều khiển): Name, Description, Type, Endpoint
 
-* Cau truc project:
+## Cấu trúc Project:
 
-- home.js: file chay chinh, thuc thi logic cua homegate server
+- home.js: file chạy chính, thực thi logic của homegate server
 - package.json: package dependency description
-- mydb.db: file CSDL SQLite mau.
+- mydb.db: file CSDL SQLite mẫu.
 
-* Cau truc database mydb.db
-- 3 tables: group, device, and password
+## Cấu trúc database mydb.db
+- 3 tables: group, device, và password
 
-* Homegate API:
+## Homegate API:
 - Authentication: http://<host>:<port>/api/auth
   + Method: POST
-  + Parameter: key=\<mat khau plaintext cua user\>
+  + Parameter: key=<Mật khẩu plain text của user>
   + Response: 
-     % truong hop thanh cong {success: 'true', token: <ma token>}
-     % truong hop khong thanh cong {success: 'false' }
+    % Trường hợp thành công: { success: 'true', token: <ma token>}
+    % Trường hợp không thành công: { success: 'false', message: 'reason for failure' }
 
-- query thiet bi: http://<host>:<port>/api/device/<arg> (arg: id hoac name thiet bi. Arg = '': query all devices)
+- Tạo thiết bị: http://<host>:<port>/api/device
+  + Method: POST
+  + Custom header: x-access-token: <token có được sau khi authentication thành công>, Content-Type: application/json
+  + Parameter: NONE
+  + Body: JSON object Device cần tạo. {name: <name>, descrip: <description>, type: <type>, endpoint: <endpoint>, parent: <parent>}
+  + Response:
+    % Trường hợp thành công: { success: 'true', device: [{<thông tin thiết bị được tạo>}]}
+    % Trường hợp không thành công: { success: 'false', message: 'reason for failure' }
+
+- Truy vấn thông tin thiết bị: http://<host>:<port>/api/device/<arg> (arg: id hoặc name thiết bị. Arg = '': query tất cả Device)
   + Method: GET
-  + Custom header: x-access-token: <token co duoc sau khi authentication thanh cong>
+  + Custom header: x-access-token: <token có được sau khi authentication thành công>
   + Parameter: NONE
   + Response: 
-     % truong hop thanh cong: { success: 'true', devices: [ {<thong tin thiet bi 1>}, {<thong tin thiet bi 2>}, ...] }
-     % truong hop khong thanh cong {success: 'false', message: "reason for failure }
+     % Trường hợp thành công: { success: 'true', devices: [ {<thông tin thiết bị 1>}, {<thông tin thiết bị 2>}, ...] }
+     % Trường hợp không thành công: {success: 'false', message: "reason for failure }
 
-- tao thiet bi: 
+- Cập nhật / Sửa đổi thiết bị: http://<host>:<port>/api/device/
+  + Method: PUT
+  + Custom header: x-access-token: <token có được sau khi authentication thành công>, Content-Type: application/json
+  + Parameter: NONE
+  + Body: JSON object Device cần cập nhật (Chú ý: bắt buộc phải có trường id để có thể cập nhật chính xác thiết bị). {id: <id>, name: <name>, descrip: <description>, type: <type>, endpoint: <endpoint>, parent: <parent>}
+  + Response:
+    % Trường hợp thành công: { success: 'true', device: [{<thông tin thiết bị đã cập nhật>}]}
+    % Trường hợp không thành công: { success: 'false', message: 'reason for failure' }
+
+- Xóa thiết bị: http://<host>:<port>/api/device/<arg> (arg: id hoặc name thiết bị. Arg = '': Xóa tất cả Device)
+  + Method: DELETE
+  + Custom header: x-access-token: <token có được sau khi authentication thành công>, Content-Type: application/json
+  + Parameter: NONE
+  + Response:
+    % Trường hợp thành công: { success: 'true', device: [{<thông tin thiết bị đã xóa>}]}
+    % Trường hợp không thành công: { success: 'false', message: 'reason for failure' }
+
+

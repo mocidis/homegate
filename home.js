@@ -6,7 +6,6 @@ var bodyParser = require('body-parser');
 var app = express();
 var jwt = require('jsonwebtoken');
 var crypto = require('crypto');
-
 app.set('superSecret', 'dicomsmarthome');
 app.use(bodyParser.json());
 app.use(bodyParser.json({
@@ -22,7 +21,7 @@ var server = app.listen(8080, function() {
     console.log('Magic happens at http://%s:%s', host, port);
 });
 
-function isInt(value) {
+function isID(value) {
     var x;
     if (isNaN(value)) {
         return false;
@@ -39,9 +38,15 @@ function resetKey(key, callback) {
             db.run("CREATE TABLE IF NOT EXISTS `password` (`key` TEXT PRIMARY KEY NOT NULL)");
             db.run("INSERT INTO `password`(key) VALUES ('" + crypto.createHash('sha1').update(key).digest("hex") + "')");
         });
-        return callback({success: true, message: 'Thiet lap lai key thanh cong.'});
+        return callback({
+            success: true,
+            message: 'Thiet lap lai key thanh cong.'
+        });
     }
-    return callback({success: false, message: 'Thiet lap lai key khong thanh cong.'});
+    return callback({
+        success: false,
+        message: 'Thiet lap lai key khong thanh cong.'
+    });
 }
 
 function init(callback) {
@@ -69,7 +74,10 @@ function init(callback) {
         db.run("INSERT INTO `group`(id,name,lft,rgt) VALUES(1,'ELECTRONICS',1,20),(2,'TELEVISIONS',2,9),(3,'TUBE',3,4),(4,'LCD',5,6),(5,'PLASMA',7,8),(6,'PORTABLE ELECTRONICS',10,19),(7,'MP3 PLAYERS',11,14),(8,'FLASH',12,13),(9,'CD PLAYERS',15,16),(10,'2 WAY RADIOS',17,18);");
         db.run("INSERT INTO `device`(name, type, endpoint, parent) VALUES('20\" TV',1,'192.168.1.9',3),('36\" TV',1,'192.168.1.9',3),('Super-LCD 42\"',1,'192.168.1.9',4),('Ultra-Plasma 62\"',1,'192.168.1.9',5),('Value Plasma 38\"',1,'192.168.1.9',5),('Power-MP3 5gb',1,'192.168.1.9',7),('Super-Player 1gb',1,'192.168.1.9',8),('Porta CD',1,'192.168.1.9',9),('CD To go!',1,'192.168.1.9',9),('Family Talk 360',1,'192.168.1.9',10);");
     });
-    callback({success: true, message: 'Da thiet lap lai database thanh cong.'});
+    callback({
+        success: true,
+        message: 'Đã thiết lập lại Database thành công.'
+    });
 }
 
 function Device(id, name, descrip, type, endpoint, parent) {
@@ -100,21 +108,33 @@ function Group(id, name, descrip, lft, rgt, subgroup, subdevice) {
 function getDevice(arg, callback) {
     if (arg == undefined) {
         db.all("SELECT * FROM `device`", function(err, row) {
-            if (row == undefined) callback({success: false, message: 'Khong co device nao trong database.'});
-            else callback(row);
+            if (row == undefined || row.length == 0) callback({
+                success: false,
+                message: 'Không có Device nào trong Database.'
+            });
+            else callback({
+                    success: true,
+                    devices: row
+                });
         })
     } else {
         var query = "";
-        if (!isInt(arg)) {
-            query = "SELECT * FROM `device` WHERE name = '" + arg + "'";
+        if (!isID(arg)) {
+            query = "SELECT * FROM `device` WHERE name LIKE '%" + arg + "%'";
         } else {
             query = "SELECT * FROM `device` WHERE id = " + arg;
         }
-        db.get(query, function(err, row) {
-            if (row == undefined) {
-                callback({success: false, message: 'Khong co device nao tuong ung.'});
+        db.all(query, function(err, row) {
+            if (row == undefined || row.length == 0) {
+                callback({
+                    success: false,
+                    message: 'Không có Device nào tương ứng.'
+                });
             } else {
-                callback(new Device(row.id, row.name, row.descrip, row.type, row.endpoint, row.parent));
+                callback({
+                    success: true,
+                    devices: row
+                });
             }
         });
     }
@@ -124,18 +144,27 @@ function addDevice(arg, callback) {
     if (arg instanceof Device && arg.parent) {
         db.get("SELECT * FROM `group` WHERE id = " + arg.parent, function(err, row) {
             if (row == undefined) {
-                callback({success: false, message: 'Khong co group cha nao phu hop.'});
+                callback({
+                    success: false,
+                    message: 'Không có Group cha nào phù hợp.'
+                });
             } else {
                 db.get("SELECT * FROM `device` WHERE name = '" + arg.name + "' AND endpoint = '" + arg.endpoint + "' AND parent = " + arg.parent, function(err, row) {
                     if (row != undefined) {
-                        callback({success: false, message: 'Device bi trung, da co san trong group.'}); // da co san trong co so du lieu
+                        callback({
+                            success: false,
+                            message: 'Device bị trùng, đã có sẵn trong Group cha.'
+                        });
                     } else {
                         db.serialize(function() {
                             db.run("BEGIN");
                             db.run("INSERT INTO `device` (name, descrip, type, endpoint, parent) VALUES ('" + arg.name + "', '" + arg.descrip + "', " + arg.type + ", '" + arg.endpoint + "', " + arg.parent + ")");
                             db.run("COMMIT");
                             db.get("SELECT * FROM `device` WHERE name = '" + arg.name + "' AND endpoint = '" + arg.endpoint + "' AND parent = " + arg.parent, function(err2, row2) {
-                                callback(new Device(row2.id, row2.name, row2.descrip, row2.type, row2.endpoint, row2.parent));
+                                callback({
+                                    success: true,
+                                    device: row2
+                                });
                             });
                         });
                     }
@@ -143,26 +172,44 @@ function addDevice(arg, callback) {
             }
         });
     } else {
-        callback({success: false, message: 'Du lieu gui len khong dung dinh dang.'});
+        callback({
+            success: false,
+            message: 'Dữ liệu gửi lên không đúng định dạng.'
+        });
     }
 }
 
 function removeDevice(arg, callback) {
-    if (arg instanceof Device && arg.id) {
-        db.get("SELECT * FROM `device` WHERE id = " + arg.id, function(err, row) {
+    if (arg) {
+        var query = "";
+        if (!isID(arg)) {
+            query = "SELECT * FROM `device` WHERE name = '" + arg + "'";
+        } else {
+            query = "SELECT * FROM `device` WHERE id = " + arg;
+        }
+        db.get(query, function(err, row) {
             if (row == undefined) {
-                callback({success: false, message: 'Khong co device nao tuong ung.'});
+                callback({
+                    success: false,
+                    message: 'Không có Device nào tương ứng.'
+                });
             } else {
                 db.serialize(function() {
                     db.run("BEGIN");
-                    db.run("DELETE FROM `device` WHERE id = " + arg.id);
+                    db.run("DELETE FROM `device` WHERE id = " + row.id);
                     db.run("COMMIT");
                 });
-                callback(new Device(row.id, row.name, row.descrip, row.type, row.endpoint, row.parent));
+                callback({
+                    success: true,
+                    device: row
+                });
             }
         });
     } else {
-        callback({success: false, message: 'Du lieu gui len khong dung dinh dang.'});
+        callback({
+            success: false,
+            message: 'Dữ liệu gửi lên không đúng định dạng.'
+        });
     }
 }
 
@@ -170,18 +217,27 @@ function updateDevice(arg, callback) {
     if (arg instanceof Device && arg.id) {
         db.get("SELECT * FROM `device` WHERE id = " + arg.id, function(err, row) {
             if (row == undefined) {
-                callback({success: false, message: 'Khong co device nao tuong ung.'});
+                callback({
+                    success: false,
+                    message: 'Không có Device nào tương ứng.'
+                });
             } else {
                 db.serialize(function() {
                     db.run("BEGIN");
                     db.run("UPDATE `device` SET name = '" + arg.name + "', descrip = '" + arg.descrip + "', type = " + arg.type + ", endpoint = '" + arg.endpoint + "', parent = " + arg.parent + " WHERE id = " + arg.id);
                     db.run("COMMIT");
                 });
-                callback(new Device(arg.id, arg.name, arg.descrip, arg.type, arg.endpoint, arg.parent));
+                callback({
+                    success: true,
+                    device: arg
+                });
             }
         });
     } else {
-        callback({success: false, message: 'Du lieu gui len khong dung dinh dang.'});
+        callback({
+            success: false,
+            message: 'Dữ liệu gửi lên không đúng định dạng.'
+        });
     }
 }
 
@@ -224,7 +280,7 @@ function fetchDevGr(arg, callback) {
         preOrder(arg);
         setId = setId.substring(0, setId.length - 1);
         db.all("SELECT * FROM `device` WHERE parent IN (" + setId + ")", function(err, row) {
-            if (row) {
+            if (row != undefined || row.length > 0) {
                 setDev(arg, row);
             }
             if (typeof callback == 'function') callback(arg);
@@ -234,28 +290,38 @@ function fetchDevGr(arg, callback) {
 
 function getGroup(arg, haveSubGrp, haveSubDev, callback) {
     var query = "";
-    if (arg === undefined) query = "SELECT * FROM `group`";
-    else if (!isInt(arg)) {
+    if (arg === undefined) query = "SELECT * FROM `group` ORDER BY lft";
+    else if (!isID(arg)) {
         query = "SELECT `node`.* FROM `group` as `node`, `group` as `parent` WHERE `node`.lft BETWEEN `parent`.lft AND `parent`.rgt AND `parent`.name = '" + arg + "' ORDER BY node.lft";
     } else {
         query = "SELECT `node`.* FROM `group` as `node`, `group` as `parent` WHERE `node`.lft BETWEEN `parent`.lft AND `parent`.rgt AND `parent`.id = " + arg + " ORDER BY node.lft";
     }
     db.all(query, function(err, row) {
-        if (row == undefined) {
-            if(arg === undefined)
-                callback({success: false, message: 'Khong co Group nao trong database.'});
-            else callback({success: false, message: 'Khong co Group nao tuong ung.'});
-        }
-        else {
+        if (row == undefined || row.length == 0) {
+            if (arg === undefined) callback({
+                success: false,
+                message: 'Không có Group nào trong Database.'
+            });
+            else callback({
+                success: false,
+                message: 'Không có Group nào tương ứng.'
+            });
+        } else {
             var tree;
             if (haveSubGrp) {
                 tree = createTree(row);
             } else tree = new Group(row[0].id, row[0].name, row[0].descrip, row[0].lft, row[0].rgt);
             if (haveSubDev) {
                 fetchDevGr(tree, function(res) {
-                    callback(res);
+                    callback({
+                        success: true,
+                        groups: res
+                    });
                 });
-            } else callback(tree);
+            } else callback({
+                success: true,
+                groups: tree
+            });
         }
     });
 }
@@ -269,13 +335,19 @@ function addGroup(arg, callback) {
                     db.run("INSERT INTO `group` (name, descrip, lft, rgt) VALUES('" + arg.name + "','" + arg.descrip + "',1,2)");
                     db.run("COMMIT");
                     db.get("SELECT * from `group` WHERE lft = 1", function(err2, row2) {
-                        callback(new Group(row2.id, row2.name, row2.descrip, row2.lft, row2.rgt));
+                        callback({
+                            success: true,
+                            groups: new Group(row2.id, row2.name, row2.descrip, row2.lft, row2.rgt)
+                        });
                     });
                 });
             } else {
                 db.get("SELECT * FROM `group` WHERE id = " + arg.parent, function(err, row) {
                     if (row == undefined) {
-                        callback({success: false, message: 'Khong co Group cha tuong ung.'});
+                        callback({
+                            success: false,
+                            message: 'Không có Group cha nào tương ứng.'
+                        });
                     } else {
                         db.serialize(function() {
                             db.run("BEGIN");
@@ -284,7 +356,10 @@ function addGroup(arg, callback) {
                             db.run("INSERT INTO `group` (name, descrip, lft, rgt) VALUES('" + arg.name + "','" + arg.descrip + "'," + row.rgt + "," + (row.rgt + 1) + ")");
                             db.run("COMMIT");
                             db.get("SELECT * FROM `group` WHERE lft = " + row.rgt, function(err2, row2) {
-                                callback(new Group(row2.id, row2.name, row2.descrip, row2.lft, row2.rgt));
+                                callback({
+                            success: true,
+                            groups: new Group(row2.id, row2.name, row2.descrip, row2.lft, row2.rgt)
+                        });
                             });
                         })
                     }
@@ -292,15 +367,27 @@ function addGroup(arg, callback) {
             }
         });
     } else {
-        callback({success: false, message: 'Du lieu gui len khong dung dinh dang.'});
+        callback({
+            success: false,
+            message: 'Dữ liệu gửi lên không đúng định dạng.'
+        });
     }
 }
 
 function removeGroup(arg, callback) {
-    if (arg instanceof Group && arg.id) {
-        db.get("SELECT * FROM `group` WHERE id = " + arg.id, function(err, row) {
+    if (arg) {
+        var query = "";
+        if (!isID(arg)) {
+            query = "SELECT * FROM `group` WHERE name = '" + arg + "'";
+        } else {
+            query = "SELECT * FROM `group` WHERE id = " + arg;
+        }
+        db.get(query, function(err, row) {
             if (row == undefined) {
-                callback({success: false, message: 'Khong co Group nao tuong ung.'});
+                callback({
+                    success: false,
+                    message: 'Không có Group nào tương ứng.'
+                });
             } else {
                 var width = row.rgt - row.lft + 1;
                 db.serialize(function() {
@@ -310,11 +397,17 @@ function removeGroup(arg, callback) {
                     db.run("UPDATE `group` SET lft = lft - " + width + " WHERE lft > " + row.rgt);
                     db.run("COMMIT");
                 })
-                callback(new Group(row.id, row.name, row.descrip, row.lft, row.rgt));
+                callback({
+                            success: true,
+                            groups: new Group(row.id, row.name, row.descrip, row.lft, row.rgt)
+                        });
             }
         });
     } else {
-        callback({success: false, message: 'Du lieu gui len khong dung dinh dang.'});
+        callback({
+            success: false,
+            message: 'Dữ liệu gửi lên không đúng định dạng.'
+        });
     }
 }
 
@@ -322,33 +415,40 @@ function updateGroup(arg, callback) {
     if (arg instanceof Group && arg.id) {
         db.get("SELECT * FROM `group` WHERE id = " + arg.id, function(err, row) {
             if (row == undefined) {
-                callback({success: false, message: 'Khong co Group nao tuong ung.'});
+                callback({
+                    success: false,
+                    message: 'Không có Group nào tương ứng.'
+                });
             } else {
                 db.serialize(function() {
                     db.run("BEGIN");
                     db.run("UPDATE `group` SET name = '" + arg.name + "', descrip = '" + arg.descrip + "' WHERE id = " + arg.id);
                     db.run("COMMIT");
                 });
-                callback(arg);
+                callback({
+                            success: true,
+                            groups: new Group(arg.id, arg.name, arg.descrip, arg.lft, arg.rgt)
+                        });
             }
         });
     } else {
-        callback({success: false, message: 'Du lieu gui len khong dung dinh dang.'});
+        callback({
+            success: false,
+            message: 'Dữ liệu gửi lên không đúng định dạng.'
+        });
     }
 }
-init(function(argument) {
-    console.log(argument);
-});
 apiRoutes.post('/auth', function(req, res) {
     if (req.body.key && req.body.key.length >= 6) {
         db.get("SELECT * FROM `password`", function(err, row) {
             if (row != undefined && crypto.createHash('sha1').update(req.body.key).digest("hex") == row.key) {
-                var token = jwt.sign({user: "admin"}, app.get('superSecret'), {
+                var token = jwt.sign({
+                    user: "admin"
+                }, app.get('superSecret'), {
                     expiresInMinutes: 1440 // expires in 24 hours
                 });
                 res.json({
                     success: true,
-                    message: 'Enjoy your token!',
                     token: token
                 });
             } else res.json({
@@ -363,9 +463,8 @@ apiRoutes.post('/auth', function(req, res) {
 });
 apiRoutes.post('/reset', function(req, res) {
     if (req.body.key && req.body.key.length >= 6) {
-        resetKey(req.body.key, function (result) {
-            if (result.success == true)
-                res.send(result);
+        resetKey(req.body.key, function(result) {
+            if (result.success == true) res.send(result);
             else res.status(403).send(result);
         });
     } else return res.status(403).send({
@@ -373,13 +472,11 @@ apiRoutes.post('/reset', function(req, res) {
         message: 'No key provided.'
     });
 });
-
 apiRoutes.post('/init', function(req, res) {
-    init(function (result) {
+    init(function(result) {
         res.send(result);
     });
 });
-
 apiRoutes.use(function(req, res, next) {
     // check header or url parameters or post parameters for token
     var token = req.query.token || req.body.token || req.param.token || req.headers['x-access-token'];
@@ -421,14 +518,13 @@ apiRoutes.route("/device").post(function(req, res, next) {
     updateDevice(dev, function(rs) {
         res.send(rs);
     })
-}).delete(function(req, res, next) {
-    var dev = new Device(req.body.id, req.body.name, req.body.descrip, req.body.type, req.body.endpoint, req.body.parent);
-    removeDevice(dev, function(rs) {
-        res.send(rs);
-    })
 })
 apiRoutes.route("/device/:arg").get(function(req, res, next) {
     getDevice(req.params.arg, function(rs) {
+        res.send(rs);
+    })
+}).delete(function(req, res, next) {
+    removeDevice(req.params.arg, function(rs) {
         res.send(rs);
     })
 })
@@ -447,14 +543,13 @@ apiRoutes.route("/group").post(function(req, res, next) {
     updateGroup(gr, function(rs) {
         res.send(rs);
     })
-}).delete(function(req, res, next) {
-    var gr = new Group(req.body.id, req.body.name, req.body.descrip, req.body.lft, req.body.rgt, req.body.subgroup, req.body.subdevice);
-    removeGroup(gr, function(rs) {
-        res.send(rs);
-    })
 })
 apiRoutes.route("/group/:arg").get(function(req, res, next) {
     getGroup(req.params.arg, false, false, function(rs) {
+        res.send(rs);
+    })
+}).delete(function(req, res, next) {
+    removeGroup(req.params.arg, function(rs) {
         res.send(rs);
     })
 })
@@ -473,5 +568,4 @@ apiRoutes.route("/group/suball/:arg").get(function(req, res, next) {
         res.send(rs);
     })
 })
-
 app.use('/api', apiRoutes);
