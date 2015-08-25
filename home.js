@@ -31,53 +31,75 @@ function isID(value) {
     return (x | 0) === x;
 }
 
-function resetKey(key, callback) {
-    if (key != undefined && key.length >= 6) {
-        db.serialize(function() {
-            db.run("DROP TABLE IF EXISTS `password`;");
-            db.run("CREATE TABLE IF NOT EXISTS `password` (`key` TEXT PRIMARY KEY NOT NULL)");
-            db.run("INSERT INTO `password`(key) VALUES ('" + crypto.createHash('sha1').update(key).digest("hex") + "')");
+function changePass(user, pass, newpass, callback) {
+    console.log(user + pass + newpass);
+    if (user != undefined && pass != undefined && pass.length >= 6 && newpass != undefined && newpass.length >= 6) {
+        db.get("SELECT * FROM `user` WHERE user = '" + user + "'", function(err, row) {
+            if (row === undefined) {
+                callback({
+                    success: false,
+                    message: 'Không có user nào tương ứng.'
+                });
+            } else if (crypto.createHash('sha1').update(pass).digest("hex") != row.password) {
+                callback({
+                    success: false,
+                    message: 'Mật khẩu cũ không đúng.'
+                });
+            } else {
+                db.run("BEGIN");
+                db.run("UPDATE `user` SET password = '" + crypto.createHash('sha1').update(newpass).digest("hex") + "' WHERE user = '" + user + "'");
+                db.run("COMMIT");
+                callback({
+                    success: true,
+                    message: 'Đã đổi mật khẩu thành công.'
+                });
+            }
         });
-        return callback({
-            success: true,
-            message: 'Thiet lap lai key thanh cong.'
-        });
-    }
-    return callback({
+    } else callback({
         success: false,
-        message: 'Thiet lap lai key khong thanh cong.'
+        message: 'Tên người dùng hoặc mật khẩu không đúng định dạng.'
     });
 }
 
 function init(callback) {
-    db.serialize(function() {
-        db.run("DROP TABLE IF EXISTS `device`;");
-        db.run("DROP TABLE IF EXISTS `group`;");
-        db.run("CREATE TABLE IF NOT EXISTS `group` (\
-        `id`  INTEGER PRIMARY KEY AUTOINCREMENT,\
-        `name`  TEXT,\
-        `descrip` TEXT,\
-        `lft` INTEGER NOT NULL,\
-        `rgt` INTEGER NOT NULL\
-        )\
-      ");
-        db.run("CREATE TABLE IF NOT EXISTS `device` (\
-        `id`  INTEGER PRIMARY KEY AUTOINCREMENT,\
-        `name`  TEXT,\
-        `descrip` TEXT,\
-        `type`  INTEGER NOT NULL,\
-        `endpoint`  TEXT NOT NULL,\
-        `parent`  INTEGER NOT NULL,\
-        FOREIGN KEY(parent) REFERENCES `group`(id) ON DELETE CASCADE\
-        )\
-      ");
-        db.run("INSERT INTO `group`(id,name,lft,rgt) VALUES(1,'ELECTRONICS',1,20),(2,'TELEVISIONS',2,9),(3,'TUBE',3,4),(4,'LCD',5,6),(5,'PLASMA',7,8),(6,'PORTABLE ELECTRONICS',10,19),(7,'MP3 PLAYERS',11,14),(8,'FLASH',12,13),(9,'CD PLAYERS',15,16),(10,'2 WAY RADIOS',17,18);");
-        db.run("INSERT INTO `device`(name, type, endpoint, parent) VALUES('20\" TV',1,'192.168.1.9',3),('36\" TV',1,'192.168.1.9',3),('Super-LCD 42\"',1,'192.168.1.9',4),('Ultra-Plasma 62\"',1,'192.168.1.9',5),('Value Plasma 38\"',1,'192.168.1.9',5),('Power-MP3 5gb',1,'192.168.1.9',7),('Super-Player 1gb',1,'192.168.1.9',8),('Porta CD',1,'192.168.1.9',9),('CD To go!',1,'192.168.1.9',9),('Family Talk 360',1,'192.168.1.9',10);");
-    });
-    callback({
-        success: true,
-        message: 'Đã thiết lập lại Database thành công.'
-    });
+    try {
+        db.serialize(function() {
+            db.run("DROP TABLE IF EXISTS `device`;");
+            db.run("DROP TABLE IF EXISTS `group`;");
+            db.run("DROP TABLE IF EXISTS `user`;");
+            db.run("CREATE TABLE IF NOT EXISTS `group` (\
+                    `id`  INTEGER PRIMARY KEY AUTOINCREMENT,\
+                    `name`  TEXT,\
+                    `descrip` TEXT,\
+                    `lft` INTEGER NOT NULL,\
+                    `rgt` INTEGER NOT NULL\
+                    )\
+            ");
+            db.run("CREATE TABLE IF NOT EXISTS `device` (\
+                    `id`  INTEGER PRIMARY KEY AUTOINCREMENT,\
+                    `name`  TEXT,\
+                    `descrip` TEXT,\
+                    `type`  INTEGER NOT NULL,\
+                    `endpoint`  TEXT NOT NULL,\
+                    `parent`  INTEGER NOT NULL,\
+                    FOREIGN KEY(parent) REFERENCES `group`(id) ON DELETE CASCADE\
+                    )\
+            ");
+            db.run("CREATE TABLE IF NOT EXISTS `user` (`user` TEXT PRIMARY KEY NOT NULL, `password` TEXT NOT NULL)");
+            db.run("INSERT INTO `group`(id,name,lft,rgt) VALUES(1,'ELECTRONICS',1,20),(2,'TELEVISIONS',2,9),(3,'TUBE',3,4),(4,'LCD',5,6),(5,'PLASMA',7,8),(6,'PORTABLE ELECTRONICS',10,19),(7,'MP3 PLAYERS',11,14),(8,'FLASH',12,13),(9,'CD PLAYERS',15,16),(10,'2 WAY RADIOS',17,18);");
+            db.run("INSERT INTO `device`(name, type, endpoint, parent) VALUES('20\" TV',1,'192.168.1.9',3),('36\" TV',1,'192.168.1.9',3),('Super-LCD 42\"',1,'192.168.1.9',4),('Ultra-Plasma 62\"',1,'192.168.1.9',5),('Value Plasma 38\"',1,'192.168.1.9',5),('Power-MP3 5gb',1,'192.168.1.9',7),('Super-Player 1gb',1,'192.168.1.9',8),('Porta CD',1,'192.168.1.9',9),('CD To go!',1,'192.168.1.9',9),('Family Talk 360',1,'192.168.1.9',10);");
+            db.run("INSERT INTO `user`(user, password) VALUES ('root', '" + crypto.createHash('sha1').update('123456').digest("hex") + "')");
+        });
+        callback({
+            success: true,
+            message: 'Đã thiết lập lại Database thành công.',
+        });
+    } catch (err) {
+        callback({
+            success: false,
+            message: 'Thiết lập lại Database không thành công.'
+        });
+    }
 }
 
 function Device(id, name, descrip, type, endpoint, parent) {
@@ -113,9 +135,9 @@ function getDevice(arg, callback) {
                 message: 'Không có Device nào trong Database.'
             });
             else callback({
-                    success: true,
-                    devices: row
-                });
+                success: true,
+                devices: row
+            });
         })
     } else {
         var query = "";
@@ -357,9 +379,9 @@ function addGroup(arg, callback) {
                             db.run("COMMIT");
                             db.get("SELECT * FROM `group` WHERE lft = " + row.rgt, function(err2, row2) {
                                 callback({
-                            success: true,
-                            group: new Group(row2.id, row2.name, row2.descrip, row2.lft, row2.rgt)
-                        });
+                                    success: true,
+                                    group: new Group(row2.id, row2.name, row2.descrip, row2.lft, row2.rgt)
+                                });
                             });
                         })
                     }
@@ -398,9 +420,9 @@ function removeGroup(arg, callback) {
                     db.run("COMMIT");
                 })
                 callback({
-                            success: true,
-                            group: new Group(row.id, row.name, row.descrip, row.lft, row.rgt)
-                        });
+                    success: true,
+                    group: new Group(row.id, row.name, row.descrip, row.lft, row.rgt)
+                });
             }
         });
     } else {
@@ -426,9 +448,9 @@ function updateGroup(arg, callback) {
                     db.run("COMMIT");
                 });
                 callback({
-                            success: true,
-                            group: new Group(arg.id, arg.name, arg.descrip, arg.lft, arg.rgt)
-                        });
+                    success: true,
+                    group: new Group(arg.id, arg.name, arg.descrip, arg.lft, arg.rgt)
+                });
             }
         });
     } else {
@@ -439,37 +461,46 @@ function updateGroup(arg, callback) {
     }
 }
 apiRoutes.post('/auth', function(req, res) {
-    if (req.body.key && req.body.key.length >= 6) {
-        db.get("SELECT * FROM `password`", function(err, row) {
-            if (row != undefined && crypto.createHash('sha1').update(req.body.key).digest("hex") == row.key) {
-                var token = jwt.sign({
-                    user: "admin"
-                }, app.get('superSecret'), {
-                    expiresInMinutes: 1440 // expires in 24 hours
-                });
-                res.json({
-                    success: true,
-                    token: token
+    if (req.body.user && req.body.password && req.body.password.length >= 6) {
+        db.all("SELECT * FROM `user`", function(err, row) {
+            if (row != undefined && row.length > 0) {
+                var success = false;
+                for (var i = 0; i < row.length; i++) {
+                    if (req.body.user == row[i].user && crypto.createHash('sha1').update(req.body.password).digest("hex") == row[i].password) {
+                        var token = jwt.sign(row[i].user, app.get('superSecret'), {
+                            expiresInMinutes: 1440 // expires in 24 hours
+                        });
+                        res.json({
+                            success: true,
+                            token: token
+                        });
+                        success = true;
+                        break;
+                    }
+                }
+                if (!success) res.json({
+                    success: false,
+                    message: 'Authentication failed. Wrong user and password.'
                 });
             } else res.json({
                 success: false,
-                message: 'Authentication failed. Wrong password.'
+                message: 'Authentication failed. No user and password in DB.'
             });
         });
     } else return res.status(403).send({
         success: false,
-        message: 'No key provided.'
+        message: 'No user and password provided.'
     });
 });
-apiRoutes.post('/reset', function(req, res) {
-    if (req.body.key && req.body.key.length >= 6) {
-        resetKey(req.body.key, function(result) {
+apiRoutes.post('/changepass', function(req, res) {
+    if (req.body.user && req.body.password && req.body.newpass && req.body.password.length >= 6 && req.body.newpass.length >= 6) {
+        changePass(req.body.user, req.body.password, req.body.newpass, function(result) {
             if (result.success == true) res.send(result);
             else res.status(403).send(result);
         });
     } else return res.status(403).send({
         success: false,
-        message: 'No key provided.'
+        message: 'Tên người dùng, mật khẩu cũ và mới không đúng định dạng. Mời nhập lại.'
     });
 });
 apiRoutes.post('/init', function(req, res) {
