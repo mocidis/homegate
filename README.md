@@ -4,12 +4,12 @@
 
 ## Các chức năng của HomeGate bao gồm:
 
-### Authentication dựa trên Access Token
-### Quản lý thiết bị:
+##### Authentication dựa trên Access Token
+##### Quản lý thiết bị:
    - Cho phép add/remove các Device (thiết bị bị điều khiển) vào một "Cây quản lý". Nút lá của Cây quản lý là Device. Các nút giữa, nút trong là Group (Nhóm các thiết bị). Cây quản lý được triển khai theo mô hình "Nested Set Model" trên SQLite3.
    - Query các thiết bị theo: Tên (Nhóm, Thiết bị), ID (Nhóm, Thiết bị), prefix Tên.
    - API là HTTP/JSON
-### Thông tin chi tiết của 1 Device (Thiết bị bị điều khiển):
+##### Thông tin chi tiết của 1 Device (Thiết bị bị điều khiển):
    - Name, Description, Type, Endpoint
 
 ## Cấu trúc Project:
@@ -22,7 +22,7 @@
 - 3 tables: group, device, và user
 
 ## Homegate API:
-### Authentication: ```http://<host>:<port>/api/auth```
+### Authentication: <sub>```http://<host>:<port>/api/auth```</sub>
   + Method: ```POST```
   + Body: ```user=<Tên người dùng>, password=<Mật khẩu plain text>```
   + Response:
@@ -30,7 +30,7 @@
 	* Trường hợp không thành công: ```{ success: 'false', message: 'reason for failure' }```
 
 
-### Tạo thiết bị: ```http://<host>:<port>/api/device```
+### Tạo thiết bị: <sub>```http://<host>:<port>/api/device```</sub>
   + Method: ```POST```
   + Custom header: ```x-access-token: <token có được sau khi authentication thành công>, Content-Type: application/json```
   + Parameter: ```NONE```
@@ -39,7 +39,7 @@
 	* Trường hợp thành công: ```{ success: 'true', device: [{<thông tin thiết bị được tạo>}]}```
 	* Trường hợp không thành công: ```{ success: 'false', message: 'reason for failure' }```
 
-### Truy vấn thông tin thiết bị: ```http://<host>:<port>/api/device/<arg> (arg: id hoặc tên thiết bị. Arg = '': query tất cả Device)```
+### Truy vấn thông tin thiết bị: <sub>```http://<host>:<port>/api/device/<arg> (arg: id hoặc tên thiết bị. Arg = '': query tất cả Device)```</sub>
   + Method: ```GET```
   + Custom header: ```x-access-token: <token có được sau khi authentication thành công>```
   + Parameter: ```NONE```
@@ -47,7 +47,7 @@
 	 * Trường hợp thành công: ```{ success: 'true', devices: [ {<thông tin thiết bị 1>}```, {<thông tin thiết bị 2>}```, ...] }```
 	 * Trường hợp không thành công: ```{success: 'false', message: 'reason for failure' }```
 
-### Cập nhật / Sửa đổi thiết bị: ```http://<host>:<port>/api/device```
+### Cập nhật / Sửa đổi thiết bị: <sub>```http://<host>:<port>/api/device```</sub>
   + Method: ```PUT```
   + Custom header: x-access-token: <token có được sau khi authentication thành công>, Content-Type: application/json
   + Parameter: ```NONE```
@@ -56,7 +56,7 @@
 	* Trường hợp thành công: ```{ success: 'true', device: [{<thông tin thiết bị đã cập nhật>}]}```
 	* Trường hợp không thành công: ```{ success: 'false', message: 'reason for failure' }```
 
-### Xóa thiết bị: ```http://<host>:<port>/api/device/<arg> (arg: id hoặc tên thiết bị)```
+### Xóa thiết bị: <sub>```http://<host>:<port>/api/device/<arg> (arg: id hoặc tên thiết bị)```</sub>
   + Method: ```DELETE```
   + Custom header: ```x-access-token: <token có được sau khi authentication thành công>```
   + Parameter: ```NONE```
@@ -64,7 +64,7 @@
 	* Trường hợp thành công: ```{ success: 'true', device: [{<thông tin thiết bị đã xóa>}]}```
 	* Trường hợp không thành công: ```{ success: 'false', message: 'reason for failure' }```
 
-### Tạo nhóm: ```http://<host>:<port>/api/group```
+### Tạo nhóm: <sub>```http://<host>:<port>/api/group```</sub>
   + Method: ```POST```
   + Custom header: ```x-access-token: <token có được sau khi authentication thành công>, Content-Type: application/json```
   + Parameter: ```NONE```
@@ -73,7 +73,7 @@
 	* Trường hợp thành công: ```{ success: 'true', group: [{<thông tin group được tạo>}]}```
 	* Trường hợp không thành công: ```{ success: 'false', message: 'reason for failure' }```
 
-### Truy vấn thông tin nhóm: ```http://<host>:<port>/api/group/<custom>/<arg> (arg: id hoặc tên nhóm. Arg = '': query tất cả Group)```
+### Truy vấn thông tin nhóm: <sub>```http://<host>:<port>/api/group/<custom>/<arg> (arg: id hoặc tên nhóm. Arg = '': query tất cả Group)```</sub>
   + Method: ```GET```
   + Custom header: ```x-access-token: <token có được sau khi authentication thành công>```
   + Parameter: ```NONE```
@@ -85,7 +85,7 @@
 	 * Trường hợp thành công: ```{ success: 'true', group: {<thông tin nhóm dạng cây>}}```
 	 * Trường hợp không thành công: ```{success: 'false', message: 'reason for failure' }```
 
-### Truy vấn thông tin nhóm: ```http://<host>:<port>/api/group/<arg> (arg: id hoặc tên nhóm. Arg = '': query tất cả Group)```
+### Truy vấn thông tin nhóm: <sub>```http://<host>:<port>/api/group/<arg> (arg: id hoặc tên nhóm. Arg = '': query tất cả Group)```</sub>
   + Method: ```GET```
   + Custom header: ```x-access-token: <token có được sau khi authentication thành công>```
   + Parameter: ```NONE```
@@ -93,7 +93,7 @@
 	 * Trường hợp thành công: ```{ success: 'true', group: {<thông tin nhóm dạng cây>}}```
 	 * Trường hợp không thành công: ```{success: 'false', message: 'reason for failure' }```
 
-### Cập nhật / Sửa đổi nhóm: ```http://<host>:<port>/api/group```
+### Cập nhật / Sửa đổi nhóm: <sub>```http://<host>:<port>/api/group```</sub>
   + Method: ```PUT```
   + Custom header: ```x-access-token: <token có được sau khi authentication thành công>, Content-Type: application/json```
   + Parameter: ```NONE```
@@ -102,7 +102,7 @@
 	* Trường hợp thành công: ```{ success: 'true', group: [{<thông tin nhóm đã cập nhật>}]}```
 	* Trường hợp không thành công: ```{ success: 'false', message: 'reason for failure' }```
 
-### Xóa nhóm: ```http://<host>:<port>/api/group/<arg> (arg: id hoặc tên nhóm)```
+### Xóa nhóm: <sub>```http://<host>:<port>/api/group/<arg> (arg: id hoặc tên nhóm)```</sub>
   + Method: ```DELETE```
   + Custom header: ```x-access-token: <token có được sau khi authentication thành công>```
   + Parameter: ```NONE```
