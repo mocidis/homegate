@@ -1,6 +1,6 @@
 # HomeGate
 
-Đây là Nodejs Project thực thi chức năng chủa homegate trong ứng dụng SmartHome. 
+Đây là Nodejs Project thực thi chức năng của homegate trong ứng dụng SmartHome. 
 
 ## Các chức năng của HomeGate bao gồm:
 
@@ -64,7 +64,7 @@
   + Custom header: ```x-access-token: <token có được sau khi authentication thành công>```
   + Parameter: ```NONE```
   + Response:
-	 * Trường hợp thành công: ```{ success: 'true', devices: [ {<thông tin thiết bị 1>}```, {<thông tin thiết bị 2>}```, ...] }```
+	 * Trường hợp thành công: ```{ success: 'true', devices: [ {<thông tin thiết bị 1>}, {<thông tin thiết bị 2>}, ...] }```
 	 * Trường hợp không thành công: ```{success: 'false', message: 'Nguyên nhân thất bại.' }```
 
 #### Cập nhật / Sửa đổi thiết bị:
