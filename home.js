@@ -10,6 +10,11 @@ var SerialPort = require("serialport").SerialPort
 var serialPort = new SerialPort("/dev/ttyO1", {
     baudrate: 115200
 });
+
+serialPort.on("open", function () {
+    console.log("Open /dev/ttyO1");
+});
+
 app.set('superSecret', 'dicomsmarthome');
 app.use(bodyParser.json());
 app.use(bodyParser.json({
@@ -616,7 +621,7 @@ function permitjoin(callback) {
         console.log("Received: " + data);
         if (data[0] == 0x44 && data[1] == 0x33 && data[2] == 0x33) callback(true);
     });
-    setTimeout(function {
+    setTimeout(function() {
         callback(false);
     }, 40000);
 }
