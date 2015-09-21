@@ -7,8 +7,9 @@ var app = express();
 var jwt = require('jsonwebtoken');
 var crypto = require('crypto');
 var SerialPort = require("serialport").SerialPort
-var serialPort = new SerialPort("/dev/ttyO1", {baudrate: 115200});
-
+var serialPort = new SerialPort("/dev/ttyO1", {
+    baudrate: 115200
+});
 app.set('superSecret', 'dicomsmarthome');
 app.use(bodyParser.json());
 app.use(bodyParser.json({
@@ -18,7 +19,7 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 var apiRoutes = express.Router();
-var server = app.listen(80, function() {
+var server = app.listen(8888, function() {
     var host = server.address().address;
     var port = server.address().port;
     console.log('Magic happens at http://%s:%s', host, port);
@@ -598,36 +599,37 @@ apiRoutes.route("/group/subdev/:arg").get(function(req, res, next) {
     })
 })
 apiRoutes.route("/group/suball/:arg").get(function(req, res, next) {
-    getGroup(req.params.arg, true, true, function(rs) {
-        res.send(rs);
+        getGroup(req.params.arg, true, true, function(rs) {
+            res.send(rs);
+        })
     })
-})
-
-/* Code điều khiển thiết bị*/
+    /* Code điều khiển thiết bị*/
 function permitjoin(callback) {
     var mess = new Uint8Array(8);
-    mess[0]=0x44;
-    mess[1]=0x31;
-    mess[2]=0x32;
-    mess[3]=0x28;
+    mess[0] = 0x44;
+    mess[1] = 0x31;
+    mess[2] = 0x32;
+    mess[3] = 0x28;
     serialPort.write(mess);
     serialPort.on('data', function(data) {
         console.log(data);
         console.log("Received: " + data);
-        if(data[0]==0x44 && data[1]==0x33 && data[2]==0x33)
-            callback(true);
+        if (data[0] == 0x44 && data[1] == 0x33 && data[2] == 0x33) callback(true);
     });
     setTimeout(function {
         callback(false);
-    }, 10000);
+    }, 40000);
 }
-
 apiRoutes.route("/permitjoin").post(function(req, res, next) {
-    permitjoin(function(result) {
-        res.send({
-            success: result,
-            message: 'PermitJoin INFO'
-        })
-    });
+    try {
+        permitjoin(function(result) {
+            res.send({
+                success: result,
+                message: 'PermitJoin INFO'
+            })
+        });
+    } catch (err) {
+        console.log(err);
+    }
 })
 app.use('/api', apiRoutes);
