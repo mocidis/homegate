@@ -10,11 +10,9 @@ var SerialPort = require("serialport").SerialPort
 var serialPort = new SerialPort("/dev/ttyO1", {
     baudrate: 115200
 });
-
-serialPort.on("open", function () {
+serialPort.on("open", function() {
     console.log("Open /dev/ttyO1");
 });
-
 app.set('superSecret', 'dicomsmarthome');
 app.use(bodyParser.json());
 app.use(bodyParser.json({
@@ -626,15 +624,15 @@ function permitjoin(callback) {
     }, 40000);
 }
 apiRoutes.route("/permitjoin").post(function(req, res, next) {
-    try {
-        permitjoin(function(result) {
+    permitjoin(function(result) {
+        try {
             res.send({
                 success: result,
                 message: 'PermitJoin INFO'
             })
-        });
-    } catch (err) {
-        console.log(err);
-    }
+        } catch (err) {
+            console.log(err);
+        }
+    });
 })
 app.use('/api', apiRoutes);
