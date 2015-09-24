@@ -607,6 +607,7 @@ apiRoutes.route("/group/suball/:arg").get(function(req, res, next) {
         })
     })
     /* Code điều khiển thiết bị*/
+var testdev = new Uint8Array(8);
 function permitjoin(callback) {
     var mess = new Uint8Array(8);
     mess[0] = 0x44;
@@ -617,12 +618,35 @@ function permitjoin(callback) {
     serialPort.on('data', function(data) {
         console.log(data);
         console.log("Received: " + data);
-        if (data[0] == 0x44 && data[1] == 0x33 && data[2] == 0x33) callback(true);
+        if (data[0] == 0x44 && data[1] == 0x33 && data[2] == 0x33) {
+            testdev[4]=data[4];
+            testdev[5]=data[5];
+            testdev[6]=data[6];
+            callback(true);
+        }
     });
     setTimeout(function() {
         callback(false);
     }, 40000);
 }
+
+function switch(stt, callback) {
+    if (stt == 'on') {
+        testdev[7]=0x31;
+    }
+    else (stt == 'off') {
+        testdev[7]=0x30;
+    }
+    if (stt == 'on' || stt == 'off') {
+        serialPort.write(testdev, function(err, result) {
+            console.log("error:" + err);
+            console.log("result:" + result);
+            if (result) callback(result);
+        });
+    }
+    else callback("FALSE");
+}
+
 apiRoutes.route("/permitjoin").post(function(req, res, next) {
     permitjoin(function(result) {
         try {
@@ -635,4 +659,17 @@ apiRoutes.route("/permitjoin").post(function(req, res, next) {
         }
     });
 })
+
+apiRoutes.route("/device/switch/:arg").post(function(req, res, next) {
+    testdev[0]=0x44;
+    testdev[1]=0x31;
+    testdev[2]=0x34;
+    testdev[3]=0x30;
+    switch(req.params.arg, function(result) {
+        res.send({
+            message: result 
+        });
+    })
+})
+
 app.use('/api', apiRoutes);
