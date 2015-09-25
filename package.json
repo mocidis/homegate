@@ -6,6 +6,7 @@
     "body-parser": "^1.13.3",
     "express": "latest",
     "jsonwebtoken": "^5.0.5",
-    "sqlite3": "latest"
+    "sqlite3": "latest",
+    "serialport": "latest"
   }
 }
