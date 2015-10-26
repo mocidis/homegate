@@ -23,7 +23,10 @@ var server = app.listen(8888, function() {
 });
 
 apiRoutes.post('/auth', function(req, res) {
-    DB.auth(req, res, jwt);
+    DB.auth(req.body.user, req.body.password, jwt, function (result) {
+        if (result.success == true) res.send(result);
+        else res.status(403).send(result);
+    });
 });
 apiRoutes.post('/changepass', function(req, res) {
     if (req.body.user && req.body.password && req.body.newpass && req.body.password.length >= 6 && req.body.newpass.length >= 6) {
@@ -135,8 +138,6 @@ apiRoutes.route("/group/suball/:arg").get(function(req, res, next) {
     })
 })
 
-
-
 apiRoutes.route("/permitjoin").post(function(req, res, next) {
     ControlAdapter.permitjoin(req.body, DB, function(result) {
         res.send({
@@ -146,8 +147,8 @@ apiRoutes.route("/permitjoin").post(function(req, res, next) {
     });
 })
 
-apiRoutes.route("/device/:arg/switch/:act").post(function(req, res, next) {
-    ControlAdapter.switchstt(req.params, DB, function (result) {
+apiRoutes.route("/device/:arg/:act").post(function(req, res, next) {
+    ControlAdapter.command(req.params, DB, function (result) {
         res.send(result);
     });
 
